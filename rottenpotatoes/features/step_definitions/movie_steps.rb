@@ -4,8 +4,8 @@ Given /the following movies exist/ do |movies_table|
   movies_table.hashes.each do |movie|
     # each returned element will be a hash whose key is the table header.
     # you should arrange to add that movie to the database here.
+    Movie.create!(movie)
   end
-  fail "Unimplemented"
 end
 
 # Make sure that one string (regexp) occurs before or after another one
@@ -25,10 +25,31 @@ When /I (un)?check the following ratings: (.*)/ do |uncheck, rating_list|
   # HINT: use String#split to split up the rating_list, then
   #   iterate over the ratings and reuse the "When I check..." or
   #   "When I uncheck..." steps in lines 89-95 of web_steps.rb
-  fail "Unimplemented"
+  rating_list.split(/,\s*/).each do |rating|
+    rating = "ratings_#{rating}"
+    steps %Q{
+      When I #{uncheck ? "uncheck":"check"} "#{rating}"
+    }
+  end
 end
 
-Then /I should see all the movies/ do
+Then /I should see all (of )?the movies/ do |ignore|
   # Make sure that all the movies in the app are visible in the table
-  fail "Unimplemented"
+  rows = page.all('table#movies tbody tr').count
+  rows.should == 10
 end
+
+# Check whether movies of designated ratings are seen or not
+
+Then /I should (not )?see movies of rating: (.*)/ do |should_not, rating_list|
+  rating_list.split(/,\s*/).each do |rating|
+    Movie.where(rating:rating).each do |movie|
+      step %Q{I should #{should_not}see "#{movie.title}"}
+      end
+    #The following attempt won't work well since it can't distinguish between 'G' and 'PG'
+    #expect(page).to have_xpath('//td', :text => "#{rating}")
+  end
+end
+
+
+
